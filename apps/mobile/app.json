@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "VRPI HRMS",
+    "slug": "vrpi-hrms",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "vrpihrms",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.vrpi.hrms",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#1E3A8A"
+      },
+      "permissions": [
+        "INTERNET"
+      ]
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}

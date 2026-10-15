@@ -1,0 +1,31 @@
+{
+  "name": "vrpi-hrms-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VRPI HRMS - Enterprise Human Resource Management System",
+  "workspaces": [
+    "packages/*",
+    "backend",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=@vrpi-hrms/backend",
+    "dev:web": "npm run dev --workspace=@vrpi-hrms/web",
+    "dev:mobile": "npm run dev --workspace=@vrpi-hrms/mobile",
+    "build:shared": "npm run build --workspace=@vrpi-hrms/shared",
+    "build:backend": "npm run build --workspace=@vrpi-hrms/backend",
+    "build:web": "npm run build --workspace=@vrpi-hrms/web",
+    "build": "npm run build:shared && npm run build:backend && npm run build:web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:backend": "npm run test --workspace=@vrpi-hrms/backend",
+    "test:web": "npm run test --workspace=@vrpi-hrms/web",
+    "db:migrate": "npm run db:migrate --workspace=@vrpi-hrms/backend",
+    "db:seed": "npm run db:seed --workspace=@vrpi-hrms/backend",
+    "db:generate": "npm run db:generate --workspace=@vrpi-hrms/backend"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
