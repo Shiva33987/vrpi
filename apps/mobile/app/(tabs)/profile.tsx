@@ -10,10 +10,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useMobileAuthStore } from '../../stores/authStore';
 import { API_BASE_URL } from '../../services/api';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, logout } = useMobileAuthStore();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -26,7 +28,30 @@ export default function ProfileScreen() {
     ? `${employee.firstName[0] || ''}${employee.lastName[0] || ''}`.toUpperCase()
     : (user?.email?.[0] || 'U').toUpperCase();
 
+  const performLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await logout();
+      router.replace('/login');
+    } catch (err) {
+      console.warn('Logout failed:', err);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      const confirmed =
+        typeof window !== 'undefined'
+          ? window.confirm('Are you sure you want to sign out of VRPI HRMS?')
+          : true;
+      if (confirmed) {
+        performLogout();
+      }
+      return;
+    }
+
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out of VRPI HRMS?',
@@ -35,16 +60,7 @@ export default function ProfileScreen() {
         {
           text: 'Sign Out',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoggingOut(true);
-              await logout();
-            } catch (err) {
-              console.warn('Logout failed:', err);
-            } finally {
-              setLoggingOut(false);
-            }
-          },
+          onPress: performLogout,
         },
       ],
       { cancelable: true }
@@ -166,7 +182,7 @@ export default function ProfileScreen() {
           <View style={styles.infoTextBox}>
             <Text style={styles.infoLabel}>Company</Text>
             <Text style={styles.infoValue}>
-              {user?.organization.name} ({user?.organization.code})
+              {user?.organization?.name || 'VRPI Technologies'} ({user?.organization?.code || 'VRPI'})
             </Text>
           </View>
         </View>
@@ -179,7 +195,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.infoTextBox}>
             <Text style={styles.infoLabel}>Timezone</Text>
-            <Text style={styles.infoValue}>{user?.organization.timezone || 'Asia/Kolkata (IST)'}</Text>
+            <Text style={styles.infoValue}>{user?.organization?.timezone || 'Asia/Kolkata (IST)'}</Text>
           </View>
         </View>
       </View>

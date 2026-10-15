@@ -52,7 +52,13 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
         const departmentsList = deptRes.status === 'fulfilled' ? deptRes.value : [];
         const allEmployeesList = allEmps.status === 'fulfilled' ? allEmps.value : [];
         const pendingLeaves = pendingLeavesRes.status === 'fulfilled' ? pendingLeavesRes.value : [];
-        const attendanceData = attRes.status === 'fulfilled' ? attRes.value : null;
+        const attendanceData = attRes.status === 'fulfilled' ? attRes.value : [];
+        const attList = Array.isArray(attendanceData) ? attendanceData : [];
+        const present = attList.filter((r: any) => r.status === 'PRESENT').length;
+        const late = attList.filter((r: any) => r.status === 'LATE').length;
+        const onLeave = attList.filter((r: any) => r.status === 'ON_LEAVE').length;
+        const halfDay = attList.filter((r: any) => r.status === 'HALF_DAY').length;
+        const absent = attList.filter((r: any) => r.status === 'ABSENT' || !r.status).length;
 
         setStats({
           totalEmployees: allEmployeesList.length,
@@ -62,7 +68,14 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
         });
 
         setDepartments(departmentsList);
-        setAttendanceOverview(attendanceData);
+        setAttendanceOverview({
+          totalEmployees: allEmployeesList.length,
+          present,
+          late,
+          onLeave,
+          halfDay,
+          absent,
+        });
         setRecentEmployees(employeesList.slice(0, 5));
       } catch (err) {
         console.error('Failed to load overview data:', err);

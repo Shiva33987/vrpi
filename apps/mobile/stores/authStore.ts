@@ -54,6 +54,7 @@ export const useMobileAuthStore = create<MobileAuthStore>((set) => ({
       });
 
       await MobileApiClient.setTokens(data.accessToken, data.refreshToken);
+      await MobileApiClient.saveCachedUser(data.user);
 
       set({
         user: data.user,
@@ -74,7 +75,7 @@ export const useMobileAuthStore = create<MobileAuthStore>((set) => ({
   logout: async () => {
     try {
       const refreshToken = await MobileApiClient.getRefreshToken();
-      await MobileApiClient.post('/auth/logout', { refreshToken });
+      await MobileApiClient.post('/auth/logout', { refreshToken }, 3000);
     } catch {
       // Ignore network errors on logout
     } finally {
@@ -92,26 +93,44 @@ export const useMobileAuthStore = create<MobileAuthStore>((set) => ({
     set({ isLoading: true });
     try {
       const token = await MobileApiClient.getAccessToken();
+      const cachedUser = await MobileApiClient.getCachedUser();
+
       if (!token) {
         set({ user: null, isAuthenticated: false, isLoading: false });
         return;
       }
 
-      const user = await MobileApiClient.get('/auth/me');
-      set({
-        user,
-        isAuthenticated: true,
-        isLoading: false,
-        isOffline: false,
-      });
-    } catch (err: any) {
-      if (err.code === 'NETWORK_ERROR') {
-        // App opened offline
-        set({ isOffline: true, isLoading: false });
-      } else {
-        await MobileApiClient.clearTokens();
-        set({ user: null, isAuthenticated: false, isLoading: false });
+      // If cached profile exists, pre-load it
+      if (cachedUser) {
+        set({ user: cachedUser, isAuthenticated: true });
       }
+
+      try {
+        const user = await MobileApiClient.get('/auth/me', 4000);
+        await MobileApiClient.saveCachedUser(user);
+        set({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          isOffline: false,
+        });
+      } catch (err: any) {
+        if (err.code === 'NETWORK_ERROR' || err.code === 'NETWORK_TIMEOUT') {
+          // App opened offline or backend is temporarily unreachable
+          set({
+            user: cachedUser || null,
+            isAuthenticated: !!cachedUser,
+            isOffline: true,
+            isLoading: false,
+          });
+        } else {
+          // Authentication invalid or expired
+          await MobileApiClient.clearTokens();
+          set({ user: null, isAuthenticated: false, isLoading: false });
+        }
+      }
+    } catch {
+      set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
 

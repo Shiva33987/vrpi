@@ -7,22 +7,35 @@
     "userInterfaceStyle": "automatic",
     "scheme": "vrpihrms",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
     "android": {
       "package": "com.vrpi.hrms",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#1E3A8A"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
       },
       "permissions": [
         "INTERNET"
       ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router"
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "a9dee635-0d37-473a-b432-c11ff0408d23"
+      },
+      "router": {
+        "origin": false
       }
     }
   }

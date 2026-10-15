@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MobileApiClient } from '../../services/api';
@@ -25,7 +26,7 @@ export default function AttendanceScreen() {
         MobileApiClient.get('/attendance/history').catch(() => []),
       ]);
       setTodayStatus(todayRes);
-      setHistory(historyRes);
+      setHistory(Array.isArray(historyRes) ? historyRes : []);
     } catch (err) {
       console.error('Failed to load attendance:', err);
     } finally {
@@ -49,7 +50,7 @@ export default function AttendanceScreen() {
       }
       await loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to record punch');
+      Alert.alert('Punch Error', err.message || 'Failed to record punch');
     } finally {
       setPunching(false);
     }

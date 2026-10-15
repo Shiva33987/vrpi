@@ -1,5 +1,12 @@
 import { Redirect } from 'expo-router';
+import { useMobileAuthStore } from '../stores/authStore';
 
 export default function Index() {
-  return <Redirect href="/(tabs)" />;
+  const { isAuthenticated, isLoading } = useMobileAuthStore();
+
+  if (isLoading) {
+    return null;
+  }
+
+  return isAuthenticated ? <Redirect href="/(tabs)" /> : <Redirect href="/login" />;
 }

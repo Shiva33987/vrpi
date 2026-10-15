@@ -3,13 +3,13 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@vrpi-hrms/shared": ["../../packages/shared/src/index.ts"]
+      "@vrpi-hrms/shared": [
+        "../../packages/shared/src/index.ts"
+      ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ]
 }

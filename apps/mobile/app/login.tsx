@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,8 +10,10 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useMobileAuthStore } from '../stores/authStore';
+import { getApiBaseUrl, setApiBaseUrl, loadStoredApiBaseUrl } from '../services/api';
 
 export default function LoginScreen() {
   const { login, isLoading, error, clearError } = useMobileAuthStore();
@@ -19,6 +21,70 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('priya.patel@vrpi.com');
   const [password, setPassword] = useState('Admin123!');
   const [orgCode, setOrgCode] = useState('VRPI');
+
+  // Server URL settings state
+  const [showServerModal, setShowServerModal] = useState(false);
+  const [serverUrlInput, setServerUrlInput] = useState('');
+  const [activeServerUrl, setActiveServerUrl] = useState('');
+  const [testingServer, setTestingServer] = useState(false);
+  const [serverStatusMsg, setServerStatusMsg] = useState<{ text: string; isError: boolean } | null>(null);
+
+  useEffect(() => {
+    loadStoredApiBaseUrl().then((url) => {
+      setActiveServerUrl(url);
+      setServerUrlInput(url);
+    });
+  }, []);
+
+  const handleTestAndSaveServer = async () => {
+    if (!serverUrlInput.trim()) {
+      setServerStatusMsg({ text: 'Please enter a server URL', isError: true });
+      return;
+    }
+    setTestingServer(true);
+    setServerStatusMsg(null);
+    try {
+      let candidate = serverUrlInput.trim().replace(/\/+$/, '');
+      if (!candidate.endsWith('/api/v1')) {
+        candidate = `${candidate}/api/v1`;
+      }
+      // Test root health or api status endpoint
+      const rootUrl = candidate.replace(/\/api\/v1$/, '');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      let isReachable = false;
+      try {
+        const res = await fetch(`${candidate}/status`, { signal: controller.signal });
+        if (res.ok || res.status === 200 || res.status === 304) isReachable = true;
+      } catch {
+        // try fallback /health
+        try {
+          const res2 = await fetch(`${rootUrl}/health`, { signal: controller.signal });
+          if (res2.ok || res2.status === 200) isReachable = true;
+        } catch {
+          isReachable = false;
+        }
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      await setApiBaseUrl(candidate);
+      setActiveServerUrl(candidate);
+      if (isReachable) {
+        setServerStatusMsg({ text: 'Connected successfully!', isError: false });
+      } else {
+        setServerStatusMsg({
+          text: 'Saved! (Warning: Backend not reachable right now, check tunnel/internet)',
+          isError: true,
+        });
+      }
+    } catch (err: any) {
+      setServerStatusMsg({ text: `Failed to save: ${err.message}`, isError: true });
+    } finally {
+      setTestingServer(false);
+    }
+  };
 
   const handleLogin = async () => {
     clearError();
@@ -46,7 +112,11 @@ export default function LoginScreen() {
           {/* Header Brand */}
           <View style={styles.header}>
             <View style={styles.brandBadge}>
-              <Text style={styles.brandBadgeText}>VR</Text>
+              <Image
+                source={require('../assets/logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.brandTitle}>VRPI HRMS</Text>
             <Text style={styles.brandSubtitle}>Employee Self-Service Mobile</Text>
@@ -135,6 +205,71 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Server Endpoint Settings Toggle */}
+            <View style={styles.serverSection}>
+              <TouchableOpacity
+                style={styles.serverToggleBtn}
+                onPress={() => setShowServerModal(!showServerModal)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.serverToggleText}>
+                  ⚙️ Server: {activeServerUrl ? activeServerUrl.replace(/^https?:\/\//, '').split('/')[0] : 'Detecting...'}
+                </Text>
+                <Text style={styles.serverToggleAction}>
+                  {showServerModal ? 'Hide' : 'Change'}
+                </Text>
+              </TouchableOpacity>
+
+              {showServerModal && (
+                <View style={styles.serverBox}>
+                  <Text style={styles.serverBoxTitle}>Backend Server URL</Text>
+                  <Text style={styles.serverBoxSubtitle}>
+                    Connect to your Cloudflare tunnel, Render, or public API:
+                  </Text>
+                  <TextInput
+                    style={styles.serverInput}
+                    value={serverUrlInput}
+                    onChangeText={setServerUrlInput}
+                    placeholder="https://your-tunnel.trycloudflare.com"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+
+                  {serverStatusMsg && (
+                    <View
+                      style={[
+                        styles.statusBanner,
+                        serverStatusMsg.isError ? styles.statusError : styles.statusSuccess,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusText,
+                          serverStatusMsg.isError ? styles.statusTextError : styles.statusTextSuccess,
+                        ]}
+                      >
+                        {serverStatusMsg.text}
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={styles.serverActions}>
+                    <TouchableOpacity
+                      style={styles.serverSaveBtn}
+                      onPress={handleTestAndSaveServer}
+                      disabled={testingServer}
+                    >
+                      {testingServer ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.serverSaveBtnText}>Test & Save</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -157,18 +292,23 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   brandBadge: {
-    width: 60,
-    height: 60,
+    width: 180,
+    height: 68,
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  brandBadgeText: {
-    color: '#1E3A8A',
-    fontWeight: '800',
-    fontSize: 26,
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   brandTitle: {
     fontSize: 24,
@@ -242,7 +382,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   demoSection: {
-    marginTop: 24,
+    marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
@@ -271,5 +411,101 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#334155',
+  },
+  serverSection: {
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  serverToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  serverToggleText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+    flex: 1,
+  },
+  serverToggleAction: {
+    fontSize: 12,
+    color: '#2563EB',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  serverBox: {
+    marginTop: 10,
+    padding: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  serverBoxTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  serverBoxSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    marginBottom: 8,
+  },
+  serverInput: {
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    height: 40,
+    fontSize: 12,
+    color: '#0F172A',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 8,
+  },
+  statusBanner: {
+    padding: 8,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  statusError: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  statusSuccess: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  statusText: {
+    fontSize: 11,
+  },
+  statusTextError: {
+    color: '#DC2626',
+  },
+  statusTextSuccess: {
+    color: '#16A34A',
+  },
+  serverActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  serverSaveBtn: {
+    backgroundColor: '#2563EB',
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  serverSaveBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

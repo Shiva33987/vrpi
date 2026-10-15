@@ -76,26 +76,30 @@ export function DashboardLayout({ currentTab, onTabChange, children }: Dashboard
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
-                width: '36px',
-                height: '36px',
                 borderRadius: '8px',
-                backgroundColor: '#1E3A8A',
-                color: '#FFFFFF',
-                fontWeight: 800,
+                backgroundColor: '#FFFFFF',
+                padding: '3px 6px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '16px',
               }}
             >
-              VR
+              <img
+                src="/vrpi-logo.png"
+                alt="VRPI"
+                style={{
+                  height: collapsed ? '24px' : '26px',
+                  maxWidth: collapsed ? '30px' : '80px',
+                  objectFit: 'contain',
+                }}
+              />
             </div>
             {!collapsed && (
               <div>
-                <div style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.3px', color: '#FFFFFF' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, letterSpacing: '-0.3px', color: '#FFFFFF' }}>
                   VRPI HRMS
                 </div>
-                <div style={{ fontSize: '11px', color: '#94A3B8' }}>Admin Portal</div>
+                <div style={{ fontSize: '10px', color: '#94A3B8' }}>Admin Portal</div>
               </div>
             )}
           </div>

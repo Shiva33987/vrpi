@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, Image } from 'react-native';
 import { useMobileAuthStore } from '../stores/authStore';
 
 export default function RootLayout() {
@@ -17,10 +17,11 @@ export default function RootLayout() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(tabs)';
+    const onLoginPage = segments[0] === 'login';
 
     if (!isAuthenticated && inAuthGroup) {
       router.replace('/login');
-    } else if (isAuthenticated && !inAuthGroup) {
+    } else if (isAuthenticated && onLoginPage) {
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, segments]);
@@ -29,10 +30,14 @@ export default function RootLayout() {
     return (
       <View style={styles.loadingContainer}>
         <View style={styles.brandIcon}>
-          <Text style={styles.brandIconText}>VR</Text>
+          <Image
+            source={require('../assets/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
         <Text style={styles.loadingTitle}>VRPI HRMS</Text>
-        <ActivityIndicator size="small" color="#1E3A8A" style={{ marginTop: 12 }} />
+        <ActivityIndicator size="small" color="#1E3A8A" style={{ marginTop: 14 }} />
       </View>
     );
   }
@@ -58,6 +63,7 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: '#F8FAFC' },
         }}
       >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
@@ -73,20 +79,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   brandIcon: {
-    width: 56,
-    height: 56,
+    width: 170,
+    height: 64,
     borderRadius: 14,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  brandIconText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 24,
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   loadingTitle: {
-    marginTop: 14,
+    marginTop: 16,
     fontSize: 18,
     fontWeight: '700',
     color: '#1E3A8A',

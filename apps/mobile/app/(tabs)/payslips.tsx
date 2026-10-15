@@ -54,8 +54,8 @@ export default function PayslipsScreen() {
 
   const fetchPayslips = useCallback(async () => {
     try {
-      const data = await MobileApiClient.get<Payslip[]>('/payroll/payslips');
-      setPayslips(data || []);
+      const data = await MobileApiClient.get<Payslip[]>('/payroll/payslips').catch(() => []);
+      setPayslips(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.warn('Failed to fetch payslips:', err);
     } finally {
@@ -107,7 +107,7 @@ export default function PayslipsScreen() {
               <View>
                 <Text style={styles.highlightSubtitle}>Latest Statement</Text>
                 <Text style={styles.highlightTitle}>
-                  {MONTH_NAMES[latestPayslip.month - 1]} {latestPayslip.year}
+                  {MONTH_NAMES[(latestPayslip.month ?? 1) - 1] || 'Month'} {latestPayslip.year}
                 </Text>
               </View>
               <View style={styles.statusPill}>
@@ -177,7 +177,7 @@ export default function PayslipsScreen() {
 
                 <View style={styles.historyDetails}>
                   <Text style={styles.historyMonth}>
-                    {MONTH_NAMES[ps.month - 1]} {ps.year}
+                    {MONTH_NAMES[(ps.month ?? 1) - 1] || 'Month'} {ps.year}
                   </Text>
                   <Text style={styles.historySub}>
                     Gross: {formatCurrency(ps.grossPay)} · Ded: {formatCurrency(deductions)}

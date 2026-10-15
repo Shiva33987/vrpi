@@ -40,22 +40,19 @@ export function LoginPage() {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '48px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '48px' }}>
             <div
               style={{
-                width: '44px',
-                height: '44px',
+                padding: '6px 14px',
                 borderRadius: '10px',
                 backgroundColor: '#FFFFFF',
-                color: '#1E3A8A',
-                fontWeight: 800,
-                fontSize: '20px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
               }}
             >
-              VR
+              <img src="/vrpi-logo.png" alt="VRPI Logo" style={{ height: '32px', objectFit: 'contain' }} />
             </div>
             <div>
               <div style={{ fontSize: '22px', fontWeight: 700, letterSpacing: '-0.5px' }}>VRPI HRMS</div>

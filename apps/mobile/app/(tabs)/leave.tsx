@@ -73,17 +73,17 @@ export default function LeaveScreen() {
   const fetchData = useCallback(async () => {
     try {
       const [balancesRes, requestsRes, typesRes] = await Promise.all([
-        MobileApiClient.get<LeaveBalance[]>('/leave/balances'),
-        MobileApiClient.get<LeaveRequestItem[]>('/leave/requests'),
-        MobileApiClient.get<LeaveType[]>('/leave/types'),
+        MobileApiClient.get<LeaveBalance[]>('/leave/balances').catch(() => []),
+        MobileApiClient.get<LeaveRequestItem[]>('/leave/requests').catch(() => []),
+        MobileApiClient.get<LeaveType[]>('/leave/types').catch(() => []),
       ]);
 
-      setBalances(balancesRes || []);
-      setRequests(requestsRes || []);
-      setLeaveTypes(typesRes || []);
+      setBalances(Array.isArray(balancesRes) ? balancesRes : []);
+      setRequests(Array.isArray(requestsRes) ? requestsRes : []);
+      setLeaveTypes(Array.isArray(typesRes) ? typesRes : []);
 
-      if (typesRes && typesRes.length > 0 && !selectedTypeId) {
-        setSelectedTypeId(typesRes[0].id);
+      if (Array.isArray(typesRes) && typesRes.length > 0) {
+        setSelectedTypeId((prev) => prev || typesRes[0].id);
       }
     } catch (err: any) {
       console.warn('Failed to load leave data:', err);
@@ -91,7 +91,7 @@ export default function LeaveScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedTypeId]);
+  }, []);
 
   useEffect(() => {
     fetchData();

@@ -1,4 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+// Base URL resolution: use relative /api/v1 for seamless Vite dev proxy, or environment override
+const getBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined') {
+    return '/api/v1';
+  }
+  return 'http://127.0.0.1:4000/api/v1';
+};
+
+const API_BASE_URL = getBaseUrl();
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
@@ -12,6 +21,9 @@ export class ApiClient {
   }
 
   static getToken(): string | null {
+    if (!this.token && typeof window !== 'undefined') {
+      this.token = localStorage.getItem('vrpi_access_token');
+    }
     return this.token;
   }
 
@@ -33,8 +45,9 @@ export class ApiClient {
       'X-Requested-With': 'XMLHttpRequest',
     };
 
-    if (this.token) {
-      defaultHeaders['Authorization'] = `Bearer ${this.token}`;
+    const authToken = this.getToken();
+    if (authToken) {
+      defaultHeaders['Authorization'] = `Bearer ${authToken}`;
     }
 
     const config: RequestInit = {
@@ -46,7 +59,40 @@ export class ApiClient {
       credentials: 'include', // for HttpOnly refresh cookie
     };
 
-    const response = await fetch(url, config);
+    let response: Response;
+    try {
+      response = await fetch(url, config);
+    } catch (networkErr: any) {
+      throw {
+        code: 'NETWORK_ERROR',
+        message: 'Unable to connect to the HRMS server. Please verify backend service is running.',
+      };
+    }
+
+    // Auto-refresh token if 401 is received on an authenticated endpoint
+    if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
+      try {
+        const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        const refreshData = await refreshRes.json();
+        if (refreshRes.ok && refreshData.success) {
+          this.setToken(refreshData.data.accessToken);
+          localStorage.setItem('vrpi_access_token', refreshData.data.accessToken);
+
+          // Retry original request with fresh token
+          const retryHeaders = {
+            ...config.headers,
+            Authorization: `Bearer ${refreshData.data.accessToken}`,
+          };
+          response = await fetch(url, { ...config, headers: retryHeaders });
+        }
+      } catch {
+        // Fall through to error handler
+      }
+    }
 
     // Handle CSV or file blob responses
     const contentType = response.headers.get('content-type');

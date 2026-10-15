@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,7 +32,7 @@ export default function HomeScreen() {
         MobileApiClient.get('/leave/balances').catch(() => []),
       ]);
       setTodayStatus(statusRes);
-      setBalances(balRes);
+      setBalances(Array.isArray(balRes) ? balRes : []);
     } catch (err) {
       console.error('Failed to load mobile home data:', err);
     } finally {
@@ -54,7 +56,7 @@ export default function HomeScreen() {
       }
       await loadData();
     } catch (err: any) {
-      alert(err.message || 'Punch operation failed');
+      Alert.alert('Punch Error', err.message || 'Punch operation failed');
     } finally {
       setPunching(false);
     }
@@ -70,6 +72,18 @@ export default function HomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />
       }
     >
+      {/* Brand Header */}
+      <View style={styles.brandHeader}>
+        <Image
+          source={require('../../assets/logo.png')}
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
+        <View style={styles.brandPill}>
+          <Text style={styles.brandPillText}>Self-Service</Text>
+        </View>
+      </View>
+
       {/* Employee Greeting Card */}
       <View style={styles.profileCard}>
         <View style={styles.avatar}>
@@ -159,9 +173,9 @@ export default function HomeScreen() {
 
         <View style={styles.balanceGrid}>
           {balances.map((b) => (
-            <View key={b.id} style={styles.balanceBox}>
-              <Text style={styles.balanceNum}>{b.remainingDays}</Text>
-              <Text style={styles.balanceType}>{b.leaveType.code}</Text>
+            <View key={b.id || Math.random().toString()} style={styles.balanceBox}>
+              <Text style={styles.balanceNum}>{b.remainingDays ?? 0}</Text>
+              <Text style={styles.balanceType}>{b.leaveType?.code || 'LV'}</Text>
               <Text style={styles.balanceSub}>days left</Text>
             </View>
           ))}
@@ -218,6 +232,30 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     gap: 16,
+  },
+  brandHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  headerLogo: {
+    width: 120,
+    height: 34,
+  },
+  brandPill: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  brandPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1E3A8A',
   },
   profileCard: {
     backgroundColor: '#1E3A8A',
